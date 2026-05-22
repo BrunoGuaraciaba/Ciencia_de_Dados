@@ -32,18 +32,70 @@ st.image(
 )
 
 # ==========================================
-# CACHE
+# FUNÇÃO PARA CARREGAR DADOS
 # ==========================================
 
 @st.cache_data
 def carregar_dados():
+    
     df = pd.read_csv(
-        r'C:\Users\olive\OneDrive\Área de Trabalho\EBAC\Python_cinencia_dados\Python_em_Ciencia_de_Dados\Streamlit II\Profissão Cientista de Dados M19 Pratique 1\data\input\bank-additional-full.csv',
+        'data/input/bank-additional-full.csv',
         sep=';'
     )
+    
     return df
 
-df = carregar_dados()
+# ==========================================
+# FILE UPLOADER
+# ==========================================
+
+st.subheader('Upload de novo arquivo')
+
+arquivo = st.file_uploader(
+    'Escolha um arquivo CSV',
+    type='csv'
+)
+
+# ==========================================
+# DEFINIÇÃO DO DATAFRAME
+# ==========================================
+
+if arquivo is not None:
+
+    try:
+
+        df = pd.read_csv(arquivo, sep=';')
+
+        st.success('Arquivo carregado com sucesso!')
+
+    except Exception as erro:
+
+        st.error(f'Erro ao carregar arquivo: {erro}')
+
+        st.stop()
+
+else:
+
+    df = carregar_dados()
+
+# ==========================================
+# VALIDAÇÃO DAS COLUNAS
+# ==========================================
+
+colunas_necessarias = [
+    'age',
+    'job',
+    'marital',
+    'education'
+]
+
+if not all(coluna in df.columns for coluna in colunas_necessarias):
+
+    st.error(
+        'O arquivo enviado não possui as colunas necessárias.'
+    )
+
+    st.stop()
 
 # ==========================================
 # SIDEBAR
@@ -52,14 +104,16 @@ df = carregar_dados()
 st.sidebar.header('Filtros')
 
 # Slider
+
 idade = st.sidebar.slider(
     'Idade máxima',
-    int(df.age.min()),
-    int(df.age.max()),
+    int(df['age'].min()),
+    int(df['age'].max()),
     40
 )
 
 # Multiselect
+
 job = st.sidebar.multiselect(
     'Profissão',
     df['job'].unique(),
@@ -114,20 +168,32 @@ with col2:
 
     st.subheader('Informações')
 
-    st.metric('Quantidade de registros', len(df_filtrado))
+    st.metric(
+        'Quantidade de registros',
+        len(df_filtrado)
+    )
 
 # ==========================================
-# FORM
+# FORMULÁRIO
 # ==========================================
+
+colunas_numericas = [
+    'age',
+    'duration',
+    'campaign',
+    'cons.price.idx'
+]
 
 with st.form('formulario'):
 
     coluna = st.selectbox(
         'Escolha uma coluna numérica',
-        ['age', 'duration', 'campaign', 'cons.price.idx']
+        colunas_numericas
     )
 
-    botao = st.form_submit_button('Gerar gráfico')
+    botao = st.form_submit_button(
+        'Gerar gráfico'
+    )
 
 # ==========================================
 # GRÁFICOS
@@ -135,7 +201,7 @@ with st.form('formulario'):
 
 if botao:
 
-    fig, ax = plt.subplots(figsize=(10,5))
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     if tipo_grafico == 'Histograma':
 
@@ -168,20 +234,3 @@ st.download_button(
     file_name='dados_filtrados.csv',
     mime='text/csv'
 )
-
-# ==========================================
-# FILE UPLOADER
-# ==========================================
-
-st.subheader('Upload de novo arquivo')
-
-arquivo = st.file_uploader(
-    'Escolha um arquivo CSV',
-    type='csv'
-)
-
-if arquivo:
-
-    novo_df = pd.read_csv(arquivo)
-
-    st.write(novo_df.head())
